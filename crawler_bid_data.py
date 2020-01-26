@@ -28,23 +28,7 @@ query = ctx.cursor()
 
 #query for top site list
 query_data = query.execute("""
-SELECT * FROM
-(SELECT xyz.account_name AS sf_account_name, 
-xyz.account_id, 
-CASE WHEN a.domain like 'www.%' THEN regexp_replace(a.domain, 'www.', '') ELSE a.domain END, --a.domain,
-Sum(CASE WHEN a.is_mkt THEN a.tot_usd_a_spend ELSE 0 end) AS spend,
-ROW_NUMBER() OVER (PARTITION BY xyz.account_id ORDER BY spend DESC) AS RANK_BY_SPEND
-FROM   mstr_datamart.ox_transaction_sum_daily_fact AS a 
-LEFT JOIN mstr_datamart.dim_sites_to_owners AS xyz 
-ON a.site_nk = xyz.site_nk 
-WHERE a.utc_rollup_date >= current_date - 30
-AND a.utc_rollup_date < current_date 
-AND a.domain IS NOT NULL
-GROUP  BY 1, 2, 3
-HAVING spend > 0)
-WHERE RANK_BY_SPEND = 1 -- change to < x to show Top X domains 
-ORDER BY SPEND DESC
-LIMIT 100;
+--ENTER QUERY HERE--
 """)
 
 #fetches query data and putting into dataframe
@@ -68,7 +52,7 @@ def getBidderInfo(x):
     from selenium import webdriver
     from selenium.webdriver.chrome.service import Service
     from xvfbwrapper import Xvfb #enables us to create a fake screen so JS will render
-    chrome_driver_path = "/home/john.sattari/dump/pointless/chromedriver"
+    chrome_driver_path = "{PATH}"
     window = Xvfb(width=1920, height=945) #set Xvfb window size.. HYUUUUUGE
     window.start() #open Xvfb window
     options = webdriver.ChromeOptions() #setting up chromedriver options
