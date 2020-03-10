@@ -20,21 +20,7 @@ query = ctx.cursor()
 
 #query for brand data (date, brand, spend)
 query.execute("""
-select
-    a.instance_rollup_date as date,
-    b.brand_name as brand_name,
-    --(case when a.x_gd_deal_id is null then a.deal_nk else a.x_gd_deal_id end) as int_deal_id,
-    sum(a.tot_a_mkt_spend_usd) as spend,
-    sum(a.tot_p_mkt_revenue_usd) as revenue
-from MSTR_DATAMART.OX_BUYER_BRAND_SUM_DAILY_FACT a
-    left join MSTR_DATAMART.BRAND_DIM b on a.brand_nk = b.brand_nk
-    left join MSTR_DATAMART.DEAL_DIM c on (case when a.x_gd_deal_id is null then a.deal_nk else a.x_gd_deal_id end) = c.deal_nk
-where (a.instance_rollup_date between current_date-9 and current_date-2) and a.deal_nk not like ''
-    and c.deal_source = '{SOURCE}'
-    and b.brand_name not in('NULL','Multiple')
-    and c.deal_id not in ('{LIST OF DEALS}')
-group by 1,2 having spend >= 100
-order by 3 desc;
+{QUERY}
 """)
 
 #fetches query data and putting into dataframe
@@ -52,22 +38,7 @@ query = ctx.cursor()
 
 #query for transaction data (bid req, bids, imps, spend, revenue)
 query.execute("""
-select
-    (case when ox.x_gd_deal_id is null then ox.deal_nk else ox.x_gd_deal_id end) as int_deal_id,
-    dd.deal_id as ext_deal_id,
-    ox.instance_rollup_date as date,
-    sum(ox.tot_bid_requests) as bid_requests,
-    sum(ox.tot_pos_bid_opportunities) as bids,
-    sum(ox.tot_mkt_impressions) as impressions,
-    sum(ox.tot_a_mkt_spend_usd) as spend,
-    sum(ox.tot_p_mkt_revenue_usd) as revenue
-from MSTR_DATAMART.OX_BUYER_BRAND_SUM_DAILY_FACT ox
-    left join MSTR_DATAMART.DEAL_DIM dd on (case when ox.x_gd_deal_id is null then ox.deal_nk else ox.x_gd_deal_id end) = dd.deal_nk
-    --left join MSTR_DATAMART.SF_OPPORTUNITYLINEITEMS__C x on dd.deal_id = x.deal_id__c
-where ox.instance_rollup_date between current_date()-9 and current_date()-2 --regexp_replace(current_date()-1,'-')
-    and dd.deal_source = 'OpenX'
-    --and ox.deal_nk is not null 
-group by 1,2,3;
+{QUERY}
 """)
 
 #fetches query data and putting into dataframe
@@ -97,26 +68,7 @@ query = ctx.cursor()
 
 #query for deal dimensions
 query.execute("""
-select
-    --s.name as opportunity_name,
-    --s.opportunity_owner__c as opportunity_owner,
-    p.platform_name as instance,
-    d.deal_name as deal_name,
-    d.deal_nk as int_deal_id,
-    d.deal_id as ext_deal_id,
-    d.status as status,
-    d.start_date as start_date,
-    d.end_date as end_date,
-    d.deal_price as price,
-    d.package_nk as package_id,
-    d.deleted as Deleted
-from MSTR_DATAMART.DEAL_DIM d
-    --left join MSTR_DATAMART.SF_OPPORTUNITYLINEITEMS__C s on d.deal_id = s.deal_id__c
-    left join MSTR_DATAMART.PLATFORM_DIM p on d.platform_id = p.platform_id
-where (d.deal_source = '{SOURCE}' or p.platform_name = '{SOURCE}')
-    and d.start_date >= '2019-01-01'
-group by 1,2,3,4,5,6,7,8,9,10
-order by 6 desc;
+{QUERY}
 """)
 
 #fetches query data and putting into dataframe
@@ -133,35 +85,7 @@ query = ctx.cursor()
 
 #query for sf opportunity info
 query.execute("""
-select
-    a.name as opportunity_link,
-    b.name as opp_name,
-    a.opportunity_owner__c as opp_owner,
-    a.programmatic_direct_type__c as pd_type,
-    a.deal_id__c as ext_deal_id,
-    --count(b.name),
-    a.createddate as created_date
-from MSTR_DATAMART.SF_OPPORTUNITYLINEITEMS__C a
-    left join MSTR_DATAMART.SF_OPPORTUNITY b on a.opportunitylineitems__c = b.id
-where a.createddate >= '2019-01-01'
-    and a.opp_product_name__c = '{REDACTED}'
-    and a.deal_id__c not in({REDACTED LIST})
-group by 1,2,3,4,5,6 having count(a.deal_id__c) < 2
-union
-select
-    a.name as opportunity_link,
-    b.name as opp_name,
-    a.opportunity_owner__c as opp_owner,
-    a.programmatic_direct_type__c as pd_type,
-    a.deal_id__c as ext_deal_id,
-    --count(b.name),
-    a.createddate as created_date
-from MSTR_DATAMART.SF_OPPORTUNITYLINEITEMS__C a
-    left join MSTR_DATAMART.SF_OPPORTUNITY b on a.opportunitylineitems__c = b.id
-where a.opp_product_name__c = '{REDACTED}'
-    and b.name in({REDACTED})
-group by 1,2,3,4,5,6
-order by 6 desc;
+{QUERY}
 """)
 
 #fetches query data and putting into dataframe
